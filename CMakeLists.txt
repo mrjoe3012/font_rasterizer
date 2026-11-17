@@ -1,9 +1,9 @@
 
 cmake_minimum_required(VERSION 3.16)
 
-project(FontRasteriser
+project(FontRasterizer
     VERSION 0.0.1
-    DESCRIPTION "Font Rasteriser"
+    DESCRIPTION "Font Rasterizer"
     LANGUAGES CXX
 )
 
