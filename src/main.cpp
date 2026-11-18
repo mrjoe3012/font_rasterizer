@@ -13,11 +13,13 @@
 
 #include <font_rasterizer/font_rasterizer.hpp>
 
-static constexpr int SCALE = 2;
-static constexpr int PIX_HEIGHT = SCALE * 8;
 
 static constexpr unsigned char PRINTABLE_START = 33;
 static constexpr unsigned char PRINTABLE_END = 126;
+
+static constexpr int SCALE = 2;
+static constexpr int PIX_HEIGHT = SCALE * 8;
+
 
 #if DEBUG
 static constexpr int DEBUG_HEIGHT = 128;
@@ -28,49 +30,6 @@ struct Glyph {
     int width;
     std::vector<unsigned char> bitmap;
 };
-
-void binarise_bitmap(unsigned char* bitmap, size_t n, float threshold = 0.6f) {
-    if (n == 0) return;
-
-    unsigned long histogram[256] = {};
-
-    for (size_t i = 0; i < n; ++i) {
-        ++histogram[bitmap[i]];
-    }
-
-    const size_t percentile = static_cast<size_t>(threshold * n);
-    size_t cumulative = 0;
-    unsigned char cutoff = 255;
-
-    for (int i = 0; i < 256; ++i) {
-        cumulative += histogram[i];
-        if (cumulative >= percentile) {
-            cutoff = static_cast<unsigned char>(i);
-            break;
-        }
-    }
-
-    for (size_t i = 0; i < n; ++i) {
-        bitmap[i] = bitmap[i] > cutoff ? 255 : 0;
-    }
-}
-
-std::vector<unsigned char> pagify_bitmap(unsigned char* data, size_t width) {
-  static constexpr int nPages = SCALE;
-  std::vector<unsigned char> pagified;
-  pagified.resize(nPages * width, 0);
-  for (size_t pageIdx = 0; pageIdx < nPages; pageIdx++) {
-    for (size_t row = 0; row < 8; row++) {
-      for (size_t col = 0; col < width; col++) {
-        unsigned char bit = data[width * pageIdx * 8 + row * width + col] > 0 ? 1 : 0;
-        if (bit) {
-          pagified[pageIdx * width + col] |= (bit << row);
-        }
-      }
-    }
-  }
-  return pagified;
-}
 
 enum RetCode {
     OKAY = 0,
@@ -238,7 +197,7 @@ int main(int argc, char** argv) {
             << " expanded height: " << PIX_HEIGHT
             << '\n';
 
-      auto pagified = pagify_bitmap(expanded.data(), totalWidth);
+      auto pagified = pagify_bitmap(expanded.data(), totalWidth, SCALE);
       widths.push_back(totalWidth);
       pagifiedBitmaps.push_back(pagified);
     }
