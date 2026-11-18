@@ -65,7 +65,6 @@ jobs:
           pattern: linux-*
           path: release-assets
           merge-multiple: true
-      - uses: actions/checkout@v7
       - name: Release
         uses: softprops/action-gh-release@v3
         with:
