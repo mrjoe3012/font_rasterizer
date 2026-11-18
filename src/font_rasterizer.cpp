@@ -150,7 +150,7 @@ std::optional<Glyph> rasterize(const FontInfo& font, const int32_t codepoint, co
     const int destY = y + yOffset;
 
     if (destY < 0 || destY >= static_cast<int>(pixelHeight)) {
-      throw std::runtime_error("Glyph bounding box parameters impossible.");
+      continue;
     }
 
     std::memcpy(
