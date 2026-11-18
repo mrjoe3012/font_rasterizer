@@ -11,8 +11,7 @@
 #include <opencv2/opencv.hpp>
 #endif
 
-#define STB_TRUETYPE_IMPLEMENTATION
-#include <stb_truetype.h>
+#include <font_rasterizer/font_rasterizer.hpp>
 
 static constexpr int SCALE = 2;
 static constexpr int PIX_HEIGHT = SCALE * 8;
@@ -73,53 +72,33 @@ std::vector<unsigned char> pagify_bitmap(unsigned char* data, size_t width) {
   return pagified;
 }
 
+enum RetCode {
+    OKAY = 0,
+    WRONG_ARG_COUNT,
+    FAILED_TTF_LOAD
+};
+
+// returns true if program arguments are okay
+bool check_args(int argc, const char * const *argv);
+
+using namespace font_rasterizer;
+using namespace std;
+
 int main(int argc, char** argv) {
-    if (argc != 2) {
-        std::cerr << "Usage: " << argv[0] << " <TTF FILE>\n";
-        return 1;
+
+    if (!check_args(argc, argv)) {
+        return RetCode::WRONG_ARG_COUNT;
     }
 
-    // Load TTF file.
-    std::ifstream stream(argv[1], std::ios::binary | std::ios::ate);
-
-    if (!stream) {
-        std::cerr << "Failed to open '" << argv[1] << "'\n";
-        return 2;
-    }
-
-    const std::streamsize fileSize = stream.tellg();
-
-    if (fileSize <= 0) {
-        std::cerr << "Invalid or empty TTF file\n";
-        return 3;
-    }
-
-    std::vector<unsigned char> fontData(fileSize);
-
-    stream.seekg(0, std::ios::beg);
-
-    if (!stream.read(
-            reinterpret_cast<char*>(fontData.data()),
-            fileSize)) {
-        std::cerr << "Failed to read TTF file\n";
-        return 4;
-    }
-
-    // Initialise font.
-    stbtt_fontinfo font{};
-
-    const int fontOffset =
-        stbtt_GetFontOffsetForIndex(fontData.data(), 0);
-
-    if (fontOffset < 0 ||
-        !stbtt_InitFont(&font, fontData.data(), fontOffset)) {
-        std::cerr << "Failed to initialise TTF font\n";
-        return 5;
+    std::string fontPath = argv[1];
+    auto fontOp = load_font(fontPath);
+    if (!fontOp) {
+        return RetCode::FAILED_TTF_LOAD;
     }
 
     // Scale font to requested pixel height.
     const float scale =
-        stbtt_ScaleForPixelHeight(&font, PIX_HEIGHT);
+        stbtt_ScaleForPixelHeight(&fontOp->fontInfo, PIX_HEIGHT);
 
     std::vector<unsigned char> widths;
     widths.reserve(PRINTABLE_END - PRINTABLE_START + 1);
@@ -139,7 +118,7 @@ int main(int argc, char** argv) {
 
         unsigned char* bitmap =
             stbtt_GetCodepointBitmap(
-                &font,
+                &fontOp->fontInfo,
                 scale,
                 scale,
                 static_cast<int>(c),
@@ -151,7 +130,7 @@ int main(int argc, char** argv) {
 
         // Get glyph bounding box offsets.
         stbtt_GetCodepointBitmapBox(
-            &font,
+            &fontOp->fontInfo,
             static_cast<int>(c),
             scale,
             scale,
@@ -163,7 +142,7 @@ int main(int argc, char** argv) {
 
         // get metrics
         stbtt_GetGlyphHMetrics(
-          &font,
+          &fontOp->fontInfo,
           static_cast<int>(c),
           &advWidth,
           &lSideBearing
@@ -171,7 +150,7 @@ int main(int argc, char** argv) {
 
         // font metrics
         stbtt_GetFontVMetrics(
-          &font,
+          &fontOp->fontInfo,
           &ascent,
           &descent,
           &linegap
@@ -298,4 +277,12 @@ int main(int argc, char** argv) {
     std::cout << "Wrote header file to output.h\nTotal bitmap bytes: " << nextOffset << std::endl;
 
     return 0;
+}
+
+bool check_args(int argc, const char * const * const argv) {
+    if (argc != 2) {
+        std::cerr << "Usage: " << argv[0] << " <TTF FILE>\n";
+        return false;
+    }
+    return true;
 }
