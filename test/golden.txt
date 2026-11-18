@@ -1,4 +1,4 @@
-// this file was generated with <github>
+// this file was generated with https://github.com/mrjoe3012/font_rasterizer
 #define FONT_FONTNAME_NUM_PAGES 2
 #define FONT_FONTNAME_PIXEL_HEIGHT 16
 #define FONT_FONTNAME_CIDX(i) (i - 33)
