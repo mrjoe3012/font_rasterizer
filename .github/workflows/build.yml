@@ -26,7 +26,8 @@ jobs:
     - name: prereq
       uses: awalsh128/cache-apt-pkgs-action@v1.6.3
       with:
-        packages: build-essential wget libopencv-core-dev libopencv-imgproc-dev libopencv-imgcodecs-dev
+        packages: >
+          build-essential wget libopencv-dev cmake
         version: ubuntu-24.04-v1
         empty_packages_behavior: error
         execute_install_scripts: false
@@ -37,6 +38,6 @@ jobs:
     - name: download_font
       run: wget 'https://github.com/edwardtufte/et-book/raw/refs/heads/gh-pages/source/4-ttf/et-book-bold-line-figures.ttf' -O font.ttf
     - name: test
-      run: mkdir -p temp/vis && cd temp && ../build/FontRasterizer font.ttf
+      run: mkdir -p temp/vis && cd temp && ../build/FontRasterizer ../font.ttf
     - name: test_result
       run: cmp output.h ../test/golden.txt
