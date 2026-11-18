@@ -1,8 +1,11 @@
+#include <cmath>
 #include <cstdint>
+#include <cstring>
 #include <fstream>
+#include <iostream>
+#include <limits>
 #include <optional>
 #include <vector>
-#include <iostream>
 
 #if DEBUG
 #include <opencv2/opencv.hpp>
@@ -13,9 +16,6 @@
 static constexpr unsigned char PRINTABLE_START = 33;
 static constexpr unsigned char PRINTABLE_END = 126;
 
-static constexpr int SCALE = 2;
-static constexpr int PIX_HEIGHT = SCALE * 8;
-
 #if DEBUG
 static constexpr int DEBUG_HEIGHT = 128;
 #endif
@@ -23,7 +23,12 @@ static constexpr int DEBUG_HEIGHT = 128;
 enum RetCode { OKAY = 0, BAD_ARGS, FAILED_TTF_LOAD };
 
 struct ProgramArgs {
+  // path to ttf file defining the font
   std::string ttfPath;
+  // final height of bitmap will be scale * 8 bits
+  unsigned int scale;
+  // threshold used to decide how to binarise a monochrome 8bit image
+  float binaryThreshold;
 };
 
 // returns true if program arguments are okay
@@ -52,11 +57,12 @@ int main(int argc, char **argv) {
   // Generate bitmap for each printable character.
   for (unsigned int c = PRINTABLE_START; c <= PRINTABLE_END; ++c) {
 
-    auto gOp = rasterize(*fontOp, static_cast<int32_t>(c), SCALE);
+    auto gOp = rasterize(*fontOp, static_cast<int32_t>(c), progArgsOp->scale,
+                         progArgsOp->binaryThreshold);
     if (!gOp) {
       // TODO
       std::cout << "CRITICAL ERROR\n";
-      return 1;
+      return -1;
     }
 
     std::cout << "Character: " << static_cast<char>(c)
@@ -70,7 +76,7 @@ int main(int argc, char **argv) {
     // Visualise expanded glyph bitmap.
     auto visVector = gOp->binarisedBuffer();
     if (gOp->width() > 0 && gOp->height() > 0) {
-      cv::Mat glyph(PIX_HEIGHT, gOp->width(), CV_8UC1, visVector.data());
+      cv::Mat glyph(gOp->height(), gOp->width(), CV_8UC1, visVector.data());
 
       const int debugWidth = std::max(
           1, static_cast<int>(std::round(static_cast<double>(gOp->width()) *
@@ -91,10 +97,14 @@ int main(int argc, char **argv) {
   }
 
   // final step: write the output header
+  static constexpr int bitsPerByte = 8;
+  static const int pixelHeight = bitsPerByte * progArgsOp->scale;
   std::ofstream of("output.h");
-  of << "// this file was generated with <github>" << std::endl;
-  of << "#define FONT_FONTNAME_NUM_PAGES " << SCALE << std::endl;
-  of << "#define FONT_FONTNAME_PIXEL_HEIGHT " << PIX_HEIGHT << std::endl;
+  of << "// this file was generated with "
+        "https://github.com/mrjoe3012/font_rasterizer"
+     << std::endl;
+  of << "#define FONT_FONTNAME_NUM_PAGES " << progArgsOp->scale << std::endl;
+  of << "#define FONT_FONTNAME_PIXEL_HEIGHT " << pixelHeight << std::endl;
   of << "#define FONT_FONTNAME_CIDX(i) (i - " << (int)PRINTABLE_START << ")"
      << std::endl;
   of << "static const uint8_t FONT_FONTNAME_WIDTHS[] PROGMEM = {" << std::endl;
@@ -130,11 +140,55 @@ int main(int argc, char **argv) {
 }
 
 std::optional<ProgramArgs> get_args(int argc, const char *const *const argv) {
-  if (argc != 2) {
-    std::cerr << "Usage: " << argv[0] << " <TTF FILE>\n";
-    return {};
+  static constexpr int minNumArgs = 2, maxNumArgs = 4;
+  enum { I_PROGNAME = 0, I_TTFPATH, I_SCALE, I_THRESHOLD };
+
+  auto badArgs = [argv]() {
+    std::cerr
+        << "Usage: " << argv[I_PROGNAME] << " <TTF file>\n"
+        << "    [scale (>= 1, default: 2)]\n"
+        << "    [binaryThreshold (0 < binaryThreshold < 1, default: 0.6)]\n";
+    return std::optional<ProgramArgs>();
+  };
+
+  if (argc < minNumArgs || argc > maxNumArgs) {
+    return badArgs();
   }
-  return {{
-    argv[1],
-  }};
+
+  std::string ttfPath = argv[I_TTFPATH];
+
+  unsigned int scale = 2;
+  if (argc > minNumArgs) {
+    unsigned long input;
+    size_t pos;
+    try {
+      input = std::stoul(argv[I_SCALE], &pos);
+    } catch (const std::exception &) {
+      return badArgs();
+    }
+    static constexpr unsigned int maxVal =
+        std::numeric_limits<unsigned int>::max();
+    if (input > maxVal || input == 0 || pos != std::strlen(argv[I_SCALE])) {
+      return badArgs();
+    }
+    scale = input;
+  }
+
+  float binaryThreshold = 0.6f;
+  if (argc == maxNumArgs) {
+    float input;
+    size_t pos;
+    try {
+      input = std::stof(argv[I_THRESHOLD], &pos);
+    } catch (const std::exception &) {
+      return badArgs();
+    }
+    if (input <= 0 || input >= 1 || !std::isfinite(input) ||
+        pos != std::strlen(argv[I_THRESHOLD])) {
+      return badArgs();
+    }
+    binaryThreshold = input;
+  }
+
+  return {{ttfPath, scale, binaryThreshold}};
 }

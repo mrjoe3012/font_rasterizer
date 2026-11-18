@@ -79,7 +79,7 @@ std::vector<unsigned char> pagify_bitmap(const unsigned char *const data,
   return pagified;
 }
 
-std::optional<Glyph> rasterize(const FontInfo& font, const int32_t codepoint, const unsigned int scale) {
+std::optional<Glyph> rasterize(const FontInfo& font, const int32_t codepoint, const unsigned int scale, const float threshold) {
   const unsigned int pixelHeight = scale * 8;
   const unsigned int nPages = scale;
   int glyphIndex = stbtt_FindGlyphIndex(
@@ -163,7 +163,7 @@ std::optional<Glyph> rasterize(const FontInfo& font, const int32_t codepoint, co
   }
   stbtt_FreeBitmap(bitmap, nullptr);
   std::vector<unsigned char> binarised = expanded;
-  binarise_bitmap(binarised.data(), binarised.size());
+  binarise_bitmap(binarised.data(), binarised.size(), threshold);
   std::vector<unsigned char> pagified = pagify_bitmap(
     binarised.data(), totalWidth, scale
   );
