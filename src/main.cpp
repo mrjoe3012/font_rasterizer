@@ -20,7 +20,7 @@ static constexpr unsigned char PRINTABLE_END = 126;
 static constexpr int DEBUG_HEIGHT = 128;
 #endif
 
-enum RetCode { OKAY = 0, BAD_ARGS, FAILED_TTF_LOAD };
+enum RetCode { OKAY = 0, BAD_ARGS, FAILED_TTF_LOAD, COULD_NOT_RASTERIZE };
 
 struct ProgramArgs {
   // path to ttf file defining the font
@@ -60,9 +60,8 @@ int main(int argc, char **argv) {
     auto gOp = rasterize(*fontOp, static_cast<int32_t>(c), progArgsOp->scale,
                          progArgsOp->binaryThreshold);
     if (!gOp) {
-      // TODO
-      std::cout << "CRITICAL ERROR\n";
-      return -1;
+      std::cerr << "Unable to rasterize bitmap for character with code=" << c << std::endl;
+      return RetCode::COULD_NOT_RASTERIZE;
     }
 
     std::cout << "Character: " << static_cast<char>(c)
@@ -189,6 +188,12 @@ std::optional<ProgramArgs> get_args(int argc, const char *const *const argv) {
     }
     binaryThreshold = input;
   }
+
+  std::cout << "Configuration:\n\tttfPath: '" << ttfPath
+            << "'\n\tscale: " << scale
+            << "\n\tbinaryThreshold: " << binaryThreshold << std::endl
+            << std::endl;
+  ;
 
   return {{ttfPath, scale, binaryThreshold}};
 }
