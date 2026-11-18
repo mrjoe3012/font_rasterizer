@@ -2,6 +2,8 @@
 
 #include <fstream>
 #include <vector>
+#include <cstring>
+#include <exception>
 
 #define STB_TRUETYPE_IMPLEMENTATION
 #include <stb_truetype.h>
@@ -60,7 +62,7 @@ void binarise_bitmap(unsigned char *const bitmap, const size_t n, const float th
 
 std::vector<unsigned char> pagify_bitmap(const unsigned char *const data,
                                          const size_t width, const unsigned int scale) {
-  const int nPages = scale;
+  const unsigned int nPages = scale;
   std::vector<unsigned char> pagified;
   pagified.resize(nPages * width, 0);
   for (size_t pageIdx = 0; pageIdx < nPages; pageIdx++) {
@@ -75,6 +77,99 @@ std::vector<unsigned char> pagify_bitmap(const unsigned char *const data,
     }
   }
   return pagified;
+}
+
+std::optional<Glyph> rasterize(const FontInfo& font, const int32_t codepoint, const unsigned int scale) {
+  const unsigned int pixelHeight = scale * 8;
+  const unsigned int nPages = scale;
+  int glyphIndex = stbtt_FindGlyphIndex(
+    &font.fontInfo,
+    codepoint
+  );
+  if (glyphIndex == 0) {
+    // glyph doesn't exist for character
+    return {};
+  }
+  const float fontScale = stbtt_ScaleForPixelHeight(
+    &font.fontInfo,
+    pixelHeight
+  );
+  int width, height;
+  // generate the raw bitmap
+  unsigned char *bitmap = stbtt_GetCodepointBitmap(
+    &font.fontInfo,
+    fontScale,
+    fontScale,
+    static_cast<int>(codepoint),
+    &width,
+    &height,
+    nullptr,
+    nullptr 
+  );
+  if (!bitmap) {
+    return {};
+  }
+  // bounding box data
+  int ix0, iy0, ix1, iy1;
+  stbtt_GetCodepointBitmapBox(
+    &font.fontInfo,
+    static_cast<int>(codepoint),
+    fontScale,
+    fontScale,
+    &ix0, &iy0, &ix1, &iy1
+  );
+  // glyph metrics
+  int advWidth, lSideBearing;
+  stbtt_GetGlyphHMetrics(
+    &font.fontInfo,
+    static_cast<int>(codepoint),
+    &advWidth,
+    &lSideBearing
+  );
+  // font metrics
+  int ascent, descent, linegap;
+  stbtt_GetFontVMetrics(
+    &font.fontInfo,
+    &ascent,
+    &descent,
+    &linegap
+  );
+
+  int totalWidth = width + lSideBearing * fontScale;
+
+  // bitmap expanded to standard height
+  std::vector<unsigned char> expanded(
+    static_cast<size_t>(totalWidth * pixelHeight), 0
+  );
+
+  // offset based on bounding box offsets
+  const int yOffset = pixelHeight - 1 + iy0 + descent * fontScale;
+  const int xOffset = lSideBearing * fontScale;
+
+  for (int y = 0; y < height; ++y) {
+    const int destY = y + yOffset;
+
+    if (destY < 0 || destY >= static_cast<int>(pixelHeight)) {
+      throw std::runtime_error("Glyph bounding box parameters impossible.");
+    }
+
+    std::memcpy(
+      expanded.data() +
+        static_cast<size_t>(destY * totalWidth + xOffset),
+      bitmap +
+        static_cast<size_t>(y * width),
+      width
+    );
+  }
+  stbtt_FreeBitmap(bitmap, nullptr);
+  std::vector<unsigned char> binarised = expanded;
+  binarise_bitmap(binarised.data(), binarised.size());
+  std::vector<unsigned char> pagified = pagify_bitmap(
+    binarised.data(), totalWidth, scale
+  );
+  return Glyph(
+    expanded, binarised, pagified, totalWidth, nPages
+  );
 }
 
 } // namespace font_rasterizer
