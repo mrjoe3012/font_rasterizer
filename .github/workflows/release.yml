@@ -66,10 +66,8 @@ jobs:
           path: release-assets
           merge-multiple: true
       - uses: actions/checkout@v7
-      - name: temp
-        run: echo "hello" > temp.txt
       - name: Release
         uses: softprops/action-gh-release@v3
         with:
           files: |
-            temp.txt
+            release-assets/*
