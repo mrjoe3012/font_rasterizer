@@ -1,3 +1,16 @@
+/*
+ * =============================================================================
+ * File:        Glyph.hpp
+ * Author:      Joseph Agrane
+ *
+ * Description:
+ * The output of the font rasterization function. The Glyph class contains all
+ * of the font buffers: the raw monochrome image (1byte per pixel), the binar-
+ * ised image (1 byte per pixel) and the paged bitmap (1bit per pixel), all
+ * stored in row-major order.
+ *
+ * =============================================================================
+ */
 #ifndef GLYPH_HPP_
 #define GLYPH_HPP_
 

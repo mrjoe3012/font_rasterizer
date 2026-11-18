@@ -1,3 +1,15 @@
+/*
+ * =============================================================================
+ * File:        font_rasterizer.hpp
+ * Author:      Joseph Agrane
+ *
+ * Description:
+ * Contains the functions used to load fonts using stb_truetype, binari-
+ * se character bitmaps and convert them to the required page represent-
+ * ation.
+ *
+ * =============================================================================
+ */
 #ifndef FONT_RASTERIZER_HPP_
 #define FONT_RASTERIZER_HPP_
 

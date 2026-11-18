@@ -1,3 +1,20 @@
+/*
+ * =============================================================================
+ * File:        main.cpp
+ * Author:      Joseph Agrane
+ *
+ * Description:
+ * This program iterates through all visible ascii characters, rasterises them
+ * in a standardised scale for a particular font using stb_truetype, binarises
+ * the images and packs them into a page-oriented bitmap representation compa-
+ * tible with the GDDRAM layout of display controllers such as the ssd1306.
+ * 
+ * This program produces output.h - A C header file containing the rasterized
+ * characters, ready for use in embedded contexts such as on AVR microcontro-
+ * llers.
+ *
+ * =============================================================================
+ */
 #include <cmath>
 #include <cstdint>
 #include <cstring>

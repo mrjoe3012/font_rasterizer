@@ -1,3 +1,14 @@
+/*
+ * =============================================================================
+ * File:        FontInfo.hpp
+ * Author:      Joseph Agrane
+ *
+ * Description:
+ * Structure that encapsulates the fontinfo struct with the data buffer it
+ * depends on.
+ *
+ * =============================================================================
+ */
 #ifndef FONT_INFO_HPP_
 #define FONT_INFO_HPP_
 
