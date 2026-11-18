@@ -22,7 +22,8 @@ public:
   }
   // pixel height of stored bitmaps
   inline size_t height() const {
-    return _nPages * _width;
+    static constexpr int bitsPerByte = 8;
+    return _nPages * bitsPerByte;
   }
   // number of pages (8-byte blocks) in pagified bitmap
   inline size_t nPages() const {
