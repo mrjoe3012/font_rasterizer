@@ -41,7 +41,4 @@ jobs:
         mkdir -p temp/vis
         cd temp
         ../build/FontRasterizer ../font.ttf
-        ls
-    - name: test_result
-      run: |
-        cmp output.h ../test/golden.txt
+        diff tmp/output.h ../test/golden.txt
