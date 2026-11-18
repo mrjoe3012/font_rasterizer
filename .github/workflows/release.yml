@@ -8,72 +8,69 @@ on:
 
 permissions:
   contents: write
+  packages: write
 
 jobs:
-  build:
-    name: Build (Ubuntu ${{ matrix.ubuntu }})
-    runs-on: ubuntu-${{ matrix.ubuntu }}
+  # build:
+  #   name: Build (Ubuntu ${{ matrix.ubuntu }})
+  #   runs-on: ubuntu-${{ matrix.ubuntu }}
 
-    strategy:
-      fail-fast: false
-      matrix:
-        ubuntu:
-          - '22.04'
-          - '24.04'
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       ubuntu:
+  #         - '22.04'
+  #         - '24.04'
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v7
 
-      - name: Prerequisites
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential cmake
+  #     - name: Prerequisites
+  #       run: |
+  #         sudo apt-get update
+  #         sudo apt-get install -y build-essential cmake
 
-      - name: Configure
-        run: |
-          cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DDEBUG=0
+  #     - name: Configure
+  #       run: |
+  #         cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DDEBUG=0
 
-      - name: Build
-        run: |
-          cmake --build build
+  #     - name: Build
+  #       run: |
+  #         cmake --build build
 
-      - name: Package
-        run: |
-          mkdir -p staging
-          cp build/FontRasterizer staging/
-          tar -czf FontRasterizer-ubuntu-${{ matrix.ubuntu }}.tar.gz \
-            -C staging .
+  #     - name: Package
+  #       run: |
+  #         mkdir -p staging
+  #         cp build/FontRasterizer staging/
+  #         tar -czf FontRasterizer-ubuntu-${{ matrix.ubuntu }}.tar.gz \
+  #           -C staging .
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: linux-ubuntu-${{ matrix.ubuntu }}
-          path: FontRasterizer-ubuntu-${{ matrix.ubuntu }}.tar.gz
-          if-no-files-found: error
+  #     - name: Upload build artifact
+  #       uses: actions/upload-artifact@v7
+  #       with:
+  #         name: linux-ubuntu-${{ matrix.ubuntu }}
+  #         path: FontRasterizer-ubuntu-${{ matrix.ubuntu }}.tar.gz
+  #         if-no-files-found: error
 
   release:
     name: Create GitHub Release
-    needs: build
+    # needs: build
     runs-on: ubuntu-latest
 
     steps:
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: linux-*
-          path: release-assets
-          merge-multiple: true
+      # - name: Download build artifacts
+      #   uses: actions/download-artifact@v7
+      #   with:
+      #     pattern: linux-*
+      #     path: release-assets
+      #     merge-multiple: true
 
-      - name: Create/update release
+      - uses: actions/checkout@v3
+      - name: Create Release
+        uses: elgohr/Github-Release-Action@v5
         env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.ref_name }}
-        run: |
-          if ! gh release view "$TAG" >/dev/null 2>&1; then
-            gh release create "$TAG" \
-              --title "$TAG" \
-              --generate-notes
-          fi
-
-          gh release upload "$TAG" release-assets/* --clobber
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          title: ${{ github.ref_name }}
+          tag: ${{ github.ref_name }}
