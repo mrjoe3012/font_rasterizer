@@ -47,7 +47,7 @@ jobs:
             -C staging .
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: linux-ubuntu-${{ matrix.ubuntu }}
           path: myprogram-ubuntu-${{ matrix.ubuntu }}.tar.gz
