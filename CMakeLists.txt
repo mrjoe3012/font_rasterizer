@@ -15,6 +15,7 @@ option(DEBUG "Enable glyph visualisation" ON)
 
 add_executable(${PROJECT_NAME}
     src/main.cpp
+    src/font_rasterizer.cpp
 )
 
 if(DEBUG)
