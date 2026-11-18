@@ -43,14 +43,14 @@ jobs:
         run: |
           mkdir -p staging
           cp build/FontRasterizer staging/
-          tar -czf myprogram-ubuntu-${{ matrix.ubuntu }}.tar.gz \
+          tar -czf FontRasterizer-ubuntu-${{ matrix.ubuntu }}.tar.gz \
             -C staging .
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v7
         with:
           name: linux-ubuntu-${{ matrix.ubuntu }}
-          path: myprogram-ubuntu-${{ matrix.ubuntu }}.tar.gz
+          path: FontRasterizer-ubuntu-${{ matrix.ubuntu }}.tar.gz
           if-no-files-found: error
 
   release:
