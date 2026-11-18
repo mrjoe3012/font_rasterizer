@@ -1,11 +1,8 @@
-
-#include <array>
 #include <cstdint>
-#include <cstring>
 #include <fstream>
-#include <iostream>
-#include <string>
+#include <optional>
 #include <vector>
+#include <iostream>
 
 #if DEBUG
 #include <opencv2/opencv.hpp>
@@ -23,20 +20,24 @@ static constexpr int PIX_HEIGHT = SCALE * 8;
 static constexpr int DEBUG_HEIGHT = 128;
 #endif
 
-enum RetCode { OKAY = 0, WRONG_ARG_COUNT, FAILED_TTF_LOAD };
+enum RetCode { OKAY = 0, BAD_ARGS, FAILED_TTF_LOAD };
+
+struct ProgramArgs {
+  std::string ttfPath;
+};
 
 // returns true if program arguments are okay
-bool check_args(int argc, const char *const *argv);
+std::optional<ProgramArgs> get_args(int argc, const char *const *argv);
 
 using namespace font_rasterizer;
 using namespace std;
 
 int main(int argc, char **argv) {
 
-  if (!check_args(argc, argv)) {
-    return RetCode::WRONG_ARG_COUNT;
+  auto progArgsOp = get_args(argc, argv);
+  if (!progArgsOp) {
+    return RetCode::BAD_ARGS;
   }
-
   std::string fontPath = argv[1];
   auto fontOp = load_font(fontPath);
   if (!fontOp) {
@@ -69,7 +70,7 @@ int main(int argc, char **argv) {
     // Visualise expanded glyph bitmap.
     auto visVector = gOp->binarisedBuffer();
     if (gOp->width() > 0 && gOp->height() > 0) {
-        cv::Mat glyph(PIX_HEIGHT, gOp->width(), CV_8UC1, visVector.data());
+      cv::Mat glyph(PIX_HEIGHT, gOp->width(), CV_8UC1, visVector.data());
 
       const int debugWidth = std::max(
           1, static_cast<int>(std::round(static_cast<double>(gOp->width()) *
@@ -128,10 +129,12 @@ int main(int argc, char **argv) {
   return 0;
 }
 
-bool check_args(int argc, const char *const *const argv) {
+std::optional<ProgramArgs> get_args(int argc, const char *const *const argv) {
   if (argc != 2) {
     std::cerr << "Usage: " << argv[0] << " <TTF FILE>\n";
-    return false;
+    return {};
   }
-  return true;
+  return {{
+    argv[1],
+  }};
 }
