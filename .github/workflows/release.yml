@@ -28,8 +28,8 @@ jobs:
 
       - name: Prerequisites
         run: |
-          apt-get update
-          apt-get install -y build-essential cmake
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake
 
       - name: Configure
         run: |
