@@ -31,14 +31,12 @@ jobs:
         cmake -S . -B build -DDEBUG=0 -DCMAKE_BUILD_TYPE=Release
     - name: make
       run: cmake --build build
-    - name: download_font
-      run: >
-        wget 
-        'https://github.com/edwardtufte/et-book/raw/refs/heads/gh-pages/source/4-ttf/et-book-bold-line-figures.ttf'
-        -O font.ttf
     - name: test
       run: |
+        wget \
+          'https://github.com/edwardtufte/et-book/raw/refs/heads/gh-pages/source/4-ttf/et-book-bold-line-figures.ttf' \
+          -O font.ttf
         mkdir -p temp/vis
         cd temp
         ../build/FontRasterizer ../font.ttf
-        diff tmp/output.h ../test/golden.txt
+        diff output.h ../test/golden.txt
